@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: nexotv-backend
+    env: node
+    plan: free
+    region: ohio
+    buildCommand: npm install && npm run build:shared && npm run prisma:generate && npm run build:backend
+    startCommand: node backend/dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: postgresql://postgres.wvwdbxhglknvgbwnihhs:Ines%2A2026%2AEnrique@aws-0-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&schema=public
+      - key: DIRECT_URL
+        value: postgresql://postgres.wvwdbxhglknvgbwnihhs:Ines%2A2026%2AEnrique@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+      - key: JWT_SECRET
+        value: nexotv_super_secret_jwt_key_2026_change_in_production
+      - key: JWT_EXPIRES_IN
+        value: 7d

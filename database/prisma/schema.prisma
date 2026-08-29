@@ -1,0 +1,335 @@
+// NexoTV Database Schema (Prisma ORM for PostgreSQL / Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  VIGENTE
+  PROXIMO_A_VENCER
+  VENCIDO
+  SUSPENDIDO
+}
+
+model User {
+  id            String         @id @default(uuid())
+  alias         String         @unique
+  name          String?
+  password_hash String
+  role          UserRole       @default(CLIENT)
+  is_active     Boolean        @default(true)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  subscriptions Subscription[]
+  profiles      Profile[]
+  devices       Device[]
+  activeStreams ActiveStream[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Plan {
+  id           String         @id @default(uuid())
+  name         String         // Plan Individual, Plan Familiar, Plan Familiar Plus
+  code         String         @unique // INDIVIDUAL, FAMILIAR, FAMILIAR_PLUS
+  max_screens  Int            // 1, 3, 5
+  max_profiles Int            // 1, 3, 5
+  description  String?
+  is_active    Boolean        @default(true)
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  user_id    String
+  plan_id    String
+  start_date DateTime
+  end_date   DateTime
+  status     SubscriptionStatus @default(VIGENTE)
+  created_at DateTime           @default(now())
+  updated_at DateTime           @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [plan_id], references: [id])
+
+  history SubscriptionHistory[]
+
+  @@map("subscriptions")
+}
+
+model SubscriptionHistory {
+  id              String   @id @default(uuid())
+  subscription_id String
+  user_id         String
+  plan_id         String
+  start_date      DateTime
+  end_date        DateTime
+  action          String   // CREATION, RENEWAL_1_MONTH, RENEWAL_MULTI, PLAN_CHANGE
+  notes           String?
+  created_at      DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@map("subscription_history")
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  user_id    String
+  name       String
+  avatar_url String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  activeStreams ActiveStream[]
+
+  @@map("profiles")
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  user_id     String
+  device_name String
+  device_uuid String   @unique
+  last_active DateTime @default(now())
+  created_at  DateTime @default(now())
+
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  activeStreams ActiveStream[]
+
+  @@map("devices")
+}
+
+model ActiveStream {
+  id             String   @id @default(uuid())
+  user_id        String
+  profile_id     String
+  device_id      String
+  content_id     String?
+  started_at     DateTime @default(now())
+  last_heartbeat DateTime @default(now())
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  device  Device  @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("active_streams")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  user_id    String?
+  action     String
+  details    String?
+  ip_address String?
+  created_at DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  type        String    @default("ALL") // ALL, TV, MOVIE, SERIES
+  image_url   String?
+  is_active   Boolean   @default(true)
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  channels    Channel[]
+  movies      Movie[]
+  series      Series[]
+
+  @@map("categories")
+}
+
+model Channel {
+  id            String          @id @default(uuid())
+  name          String
+  category_id   String?
+  category      Category?       @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  category_name String?
+  number        Float?
+  logo_url      String?
+  logo_emoji    String          @default("📺")
+  description   String?
+  now_playing   String?         @default("Transmisión en Vivo")
+  stream_url    String?
+  is_hd         Boolean         @default(true)
+  is_active     Boolean         @default(true)
+  sort_order    Int             @default(0)
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+
+  sources       ChannelSource[]
+
+  @@map("channels")
+}
+
+model ChannelSource {
+  id                 String    @id @default(uuid())
+  channel_id         String
+  channel            Channel   @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  url                String
+  format             String    @default("HLS")
+  is_active          Boolean   @default(true)
+  priority           Int       @default(1)
+  last_checked_at    DateTime?
+  last_status        String    @default("UNCHECKED")
+  last_http_code     Int?
+  last_response_time Int?
+  last_error_message String?
+  created_by_user_id String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@map("channel_sources")
+}
+
+model Movie {
+  id             String        @id @default(uuid())
+  title          String
+  original_title String?
+  category_id    String?
+  category       Category?     @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  category_name  String?
+  genre          String?       // Acción, Comedia, Terror, Sci-Fi, Drama, Animación, Aventura
+  year           Int           @default(2026)
+  duration       String        @default("2h 00m")
+  rating         String        @default("IMDb 8.0")
+  synopsis       String?
+  poster_url     String?
+  backdrop_url   String?
+  poster_emoji   String        @default("🎬")
+  stream_url     String?       // fallback stream url
+  is_active      Boolean       @default(true)
+  sort_order     Int           @default(0)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  sources        MovieSource[]
+
+  @@map("movies")
+}
+
+model MovieSource {
+  id                 String    @id @default(uuid())
+  movie_id           String
+  movie              Movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  url                String
+  format             String    @default("MP4")
+  is_active          Boolean   @default(true)
+  priority           Int       @default(1)
+  last_checked_at    DateTime?
+  last_status        String    @default("UNCHECKED")
+  last_http_code     Int?
+  last_response_time Int?
+  last_error_message String?
+  created_by_user_id String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@map("movie_sources")
+}
+
+model Series {
+  id             String    @id @default(uuid())
+  title          String
+  original_title String?
+  category_id    String?
+  category       Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  category_name  String?
+  genre          String?   // Drama, Acción, Comedia, Sci-Fi, Suspenso, Documental
+  year           Int       @default(2026)
+  rating         String    @default("IMDb 8.0")
+  synopsis       String?
+  poster_url     String?
+  backdrop_url   String?
+  poster_emoji   String    @default("📺")
+  is_active      Boolean   @default(true)
+  sort_order     Int       @default(0)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  seasons        Season[]
+
+  @@map("series")
+}
+
+model Season {
+  id            String    @id @default(uuid())
+  series_id     String
+  series        Series    @relation(fields: [series_id], references: [id], onDelete: Cascade)
+  season_number Int
+  title         String?
+  is_active     Boolean   @default(true)
+  sort_order    Int       @default(0)
+  created_at    DateTime  @default(now())
+
+  episodes      Episode[]
+
+  @@map("seasons")
+}
+
+model Episode {
+  id             String          @id @default(uuid())
+  season_id      String
+  season         Season          @relation(fields: [season_id], references: [id], onDelete: Cascade)
+  episode_number Int
+  title          String
+  duration       String          @default("45m")
+  synopsis       String?
+  thumbnail_url  String?
+  stream_url     String?         // fallback stream url
+  is_active      Boolean         @default(true)
+  sort_order     Int             @default(0)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+
+  sources        EpisodeSource[]
+
+  @@map("episodes")
+}
+
+model EpisodeSource {
+  id                 String    @id @default(uuid())
+  episode_id         String
+  episode            Episode   @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+  url                String
+  format             String    @default("HLS")
+  is_active          Boolean   @default(true)
+  priority           Int       @default(1)
+  last_checked_at    DateTime?
+  last_status        String    @default("UNCHECKED")
+  last_http_code     Int?
+  last_response_time Int?
+  last_error_message String?
+  created_by_user_id String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@map("episode_sources")
+}

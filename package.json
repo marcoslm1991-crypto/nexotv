@@ -1,0 +1,33 @@
+{
+  "name": "nexotv-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma NexoTV - Monorepo de televisión digital y streaming VOD para Android TV, Google TV y Fire TV",
+  "workspaces": [
+    "apps/*",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --prefix packages/shared",
+    "build:backend": "npm run build --prefix backend",
+    "start:backend": "npm run start:dev --prefix backend",
+    "start:prod": "node backend/dist/main.js",
+    "start:admin": "npm run dev --prefix apps/admin-panel",
+    "start:tv": "npm run start --prefix apps/tv-app",
+    "start:tv:clean": "npm run start:clean --prefix apps/tv-app",
+    "start:tv:web": "npm run web --prefix apps/tv-app",
+    "android:tv": "npm run android --prefix apps/tv-app",
+    "prisma:generate": "npx prisma generate --schema=database/prisma/schema.prisma",
+    "prisma:migrate": "npx prisma migrate dev --schema=database/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.20.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@react-native/babel-preset": "^0.73.21",
+    "@react-native-community/cli": "^12.3.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@nexotv/tv-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "start:clean": "react-native start --reset-cache",
+    "web": "vite --host 0.0.0.0 --port 3002",
+    "android": "react-native run-android",
+    "build:android": "cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.73.4",
+    "react-native-web": "^0.19.10",
+    "@babel/runtime": "^7.20.0",
+    "@nexotv/shared": "*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@react-native/babel-preset": "^0.73.21",
+    "@react-native-community/cli": "^12.3.2",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/react-native": "^0.73.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4"
+  }
+}

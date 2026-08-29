@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as dns from 'dns';
-import { StreamFormat, StreamStatus, StreamTestResultDto } from '@nexotv/shared';
+import { StreamFormat, StreamStatus, StreamTestResultDto } from '../common/types';
 
 @Injectable()
 export class LinkTesterService {

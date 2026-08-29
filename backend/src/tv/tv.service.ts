@@ -1,11 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LinkTesterService } from './link-tester.service';
-import {
-  StreamFormat,
-  StreamTestResultDto,
-  TvStatsSummaryDto,
-} from '@nexotv/shared';
+import { StreamFormat, StreamTestResultDto, TvStatsSummaryDto } from '../common/types';
 import {
   CreateCategoryDto,
   UpdateCategoryDto,

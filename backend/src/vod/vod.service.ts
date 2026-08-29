@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LinkTesterService } from '../tv/link-tester.service';
-import { StreamFormat, FullContentStatsDto, StreamTestResultDto } from '@nexotv/shared';
+import { StreamFormat, FullContentStatsDto, StreamTestResultDto } from '../common/types';
 import {
   CreateMovieDto,
   UpdateMovieDto,

@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@nexotv/shared": ["packages/shared/src/index.ts", "packages/shared/dist/index.d.ts"]
+    },
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,

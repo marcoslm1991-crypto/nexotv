@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar, useWindowDimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
+import { FavoritesProvider } from './context/FavoritesContext';
 import { RootScreen } from './types/navigation.types';
 import { LoginScreen } from './screens/LoginScreen';
 import { ProfileSelectionScreen } from './screens/ProfileSelectionScreen';
@@ -9,6 +10,7 @@ import { HomeScreen } from './screens/HomeScreen';
 import { LiveTVScreen } from './screens/LiveTVScreen';
 import { SeriesScreen } from './screens/SeriesScreen';
 import { MoviesScreen } from './screens/MoviesScreen';
+import { MyListScreen } from './screens/MyListScreen';
 import { AccountScreen } from './screens/AccountScreen';
 import { SideMenu } from './components/SideMenu';
 import { HeaderTopBar } from './components/HeaderTopBar';
@@ -19,7 +21,7 @@ import { COLORS } from './theme/colors';
 function MainAppNavigator() {
   const auth = useAuth();
   const profile = useProfile();
-  const [currentScreen, setCurrentScreen] = useState<RootScreen>('HOME');
+  const [currentScreen, setCurrentScreen] = useState<RootScreen>('LOGIN');
   const [showLoginWarning, setShowLoginWarning] = useState(false);
   const { width, height } = useWindowDimensions();
   const isMobile = Math.min(width, height) < 768;
@@ -39,7 +41,8 @@ function MainAppNavigator() {
     }
   }, [auth.session?.id]);
 
-  if (currentScreen === 'LOGIN') {
+  // Si no hay sesión iniciada de usuario o pantalla en LOGIN, requerir autenticación
+  if (!auth.session || currentScreen === 'LOGIN') {
     return <LoginScreen onSuccess={() => setCurrentScreen('PROFILE_SELECTION')} />;
   }
 
@@ -58,7 +61,7 @@ function MainAppNavigator() {
       case 'MOVIES':
         return <MoviesScreen />;
       case 'MY_LIST':
-        return <MoviesScreen />;
+        return <MyListScreen />;
       case 'ACCOUNT':
         return (
           <AccountScreen
@@ -155,6 +158,13 @@ function MainAppNavigator() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={[styles.topTabPill, currentScreen === 'MY_LIST' && styles.topTabPillActive]}
+              onPress={() => setCurrentScreen('MY_LIST')}
+            >
+              <Text style={[styles.topTabText, currentScreen === 'MY_LIST' && styles.topTabTextActive]}>⭐ Mi Lista</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.topTabPill, currentScreen === 'ACCOUNT' && styles.topTabPillActive]}
               onPress={() => setCurrentScreen('ACCOUNT')}
             >
@@ -198,7 +208,9 @@ export default function App() {
       <StatusBar hidden={false} barStyle="light-content" backgroundColor="#0F131C" />
       <AuthProvider>
         <ProfileProvider>
-          <MainAppNavigator />
+          <FavoritesProvider>
+            <MainAppNavigator />
+          </FavoritesProvider>
         </ProfileProvider>
       </AuthProvider>
     </SafeAreaView>

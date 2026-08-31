@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, useWindowDimensions } from 'react-native';
 import { MOVIES_CATALOG, Movie } from '../services/contentCatalog';
 import { FocusableItem } from '../components/FocusableItem';
 import { VideoPlayerModal } from '../components/VideoPlayerModal';
 import { MediaDetailModal } from '../components/MediaDetailModal';
+import { useFavorites } from '../context/FavoritesContext';
 import { COLORS } from '../theme/colors';
 
 export const MoviesScreen: React.FC = () => {
@@ -11,12 +12,14 @@ export const MoviesScreen: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>(MOVIES_CATALOG);
   const [detailMovie, setDetailMovie] = useState<Movie | null>(null);
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const { isMovieFavorite, toggleFavoriteMovie } = useFavorites();
   const { width } = useWindowDimensions();
 
   // Cargar catálogo de películas dinámicamente desde el backend NestJS
   useEffect(() => {
-    fetch('http://localhost:3000/api/v1/vod/movies/feed')
+    fetch('https://nexotv-necn.onrender.com/api/v1/vod/movies/feed')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -40,22 +43,40 @@ export const MoviesScreen: React.FC = () => {
 
   const dynamicCategories = ['TODOS', ...Array.from(new Set(movies.map((m) => m.category)))];
 
-  const filteredMovies = selectedCategory === 'TODOS'
-    ? movies
-    : movies.filter((m) => m.category === selectedCategory);
+  const filteredMovies = movies
+    .filter((m) => (selectedCategory === 'TODOS' ? true : m.category === selectedCategory))
+    .filter((m) => (searchQuery ? m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.category.toLowerCase().includes(searchQuery.toLowerCase()) : true));
 
   // Responsive grid calculation for movies
   const numColumns = width < 480 ? 3 : width < 768 ? 4 : width < 1100 ? 5 : 6;
   const gapSize = 12;
-  const computedCardWidth = Math.max(90, Math.floor((width - 48 - (gapSize * (numColumns - 1))) / numColumns));
+  const computedCardWidth = Math.max(90, Math.floor((width - 48 - gapSize * (numColumns - 1)) / numColumns));
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>🎬 Películas VOD 4K ({movies.length} Películas Sincronizadas)</Text>
+        <Text style={styles.title}>🎬 Películas VOD 4K ({filteredMovies.length} Películas)</Text>
         <Text style={styles.subtitle}>Catálogo exclusivo de cine en Ultra Alta Definición</Text>
       </View>
 
+      {/* Buscador 🔍 de Películas */}
+      <View style={styles.searchBox}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar película por título o género..."
+          placeholderTextColor={COLORS.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery ? (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Text style={styles.clearIcon}>✕</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Categorías Chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
         {dynamicCategories.map((cat) => (
           <TouchableOpacity
@@ -72,28 +93,42 @@ export const MoviesScreen: React.FC = () => {
 
       <ScrollView contentContainerStyle={styles.gridContainer}>
         <View style={styles.grid}>
-          {filteredMovies.map((m, idx) => (
-            <FocusableItem
-              key={m.id}
-              hasTVPreferredFocus={idx === 0}
-              style={[styles.movieCard, { width: computedCardWidth }]}
-              focusedStyle={styles.movieCardFocused}
-              onPress={() => setDetailMovie(m)}
-            >
-              <View style={styles.posterBox}>
-                {m.posterUrl ? (
-                  <Image source={{ uri: m.posterUrl }} style={styles.posterImage} resizeMode="cover" />
-                ) : (
-                  <Text style={styles.posterEmoji}>{m.posterEmoji}</Text>
-                )}
-                <View style={styles.ratingBadge}>
-                  <Text style={styles.ratingText}>{m.rating}</Text>
+          {filteredMovies.map((m, idx) => {
+            const isFav = isMovieFavorite(m.id) || isMovieFavorite(m.title);
+            return (
+              <FocusableItem
+                key={m.id}
+                hasTVPreferredFocus={idx === 0}
+                style={[styles.movieCard, { width: computedCardWidth }]}
+                focusedStyle={styles.movieCardFocused}
+                onPress={() => setDetailMovie(m)}
+              >
+                <View style={styles.posterBox}>
+                  {m.posterUrl ? (
+                    <Image source={{ uri: m.posterUrl }} style={styles.posterImage} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.posterEmoji}>{m.posterEmoji}</Text>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.favBadgeBtn}
+                    onPress={() => {
+                      toggleFavoriteMovie(m.id);
+                      toggleFavoriteMovie(m.title);
+                    }}
+                  >
+                    <Text style={styles.favStarText}>{isFav ? '⭐' : '☆'}</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.ratingBadge}>
+                    <Text style={styles.ratingText}>{m.rating}</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.movieTitle} numberOfLines={1}>{m.title}</Text>
-              <Text style={styles.movieMeta}>{m.year} • {m.duration}</Text>
-            </FocusableItem>
-          ))}
+                <Text style={styles.movieTitle} numberOfLines={1}>{m.title}</Text>
+                <Text style={styles.movieMeta}>{m.year} • {m.duration}</Text>
+              </FocusableItem>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -114,6 +149,7 @@ export const MoviesScreen: React.FC = () => {
         title={playingMovie?.title || 'Película 4K'}
         subtitle={`${playingMovie?.year || ''} • ${playingMovie?.duration || ''} • ${playingMovie?.rating || ''}`}
         streamUrl={playingMovie?.streamUrl}
+        contentId={playingMovie?.id}
         posterEmoji={playingMovie?.posterEmoji}
         onClose={() => setPlayingMovie(null)}
       />
@@ -128,7 +164,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   title: {
     color: '#FFFFFF',
@@ -139,6 +175,31 @@ const styles = StyleSheet.create({
     color: COLORS.electricBlue,
     fontSize: 12,
     marginTop: 4,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
+    marginBottom: 14,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+  },
+  clearIcon: {
+    color: COLORS.textMuted,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   categoryScroll: {
     flexDirection: 'row',
@@ -200,6 +261,18 @@ const styles = StyleSheet.create({
   },
   posterEmoji: {
     fontSize: 40,
+  },
+  favBadgeBtn: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  favStarText: {
+    fontSize: 14,
   },
   ratingBadge: {
     position: 'absolute',

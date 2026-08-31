@@ -1,0 +1,8 @@
+{
+  "appId": "com.nexotv.app",
+  "appName": "NexoTV",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

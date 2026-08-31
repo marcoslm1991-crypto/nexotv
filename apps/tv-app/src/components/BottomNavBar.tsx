@@ -26,6 +26,11 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentScreen, onNav
         <Text style={[styles.label, (currentScreen === 'MOVIES' || currentScreen === 'SERIES') && styles.labelActive]}>Películas</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.navItem} onPress={() => onNavigate('MY_LIST')}>
+        <Text style={[styles.icon, currentScreen === 'MY_LIST' && styles.iconActive]}>⭐</Text>
+        <Text style={[styles.label, currentScreen === 'MY_LIST' && styles.labelActive]}>Mi Lista</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.navItem} onPress={() => onNavigate('ACCOUNT')}>
         <Text style={[styles.icon, currentScreen === 'ACCOUNT' && styles.iconActive]}>👤</Text>
         <Text style={[styles.label, currentScreen === 'ACCOUNT' && styles.labelActive]}>Mi Cuenta</Text>

@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build --prefix apps/admin-panel",
+  "outputDirectory": "apps/admin-panel/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

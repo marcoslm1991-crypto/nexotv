@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { COLORS } from '../theme/colors';
+import { useFavorites } from '../context/FavoritesContext';
 
 interface MediaDetailModalProps {
   visible: boolean;
   item: {
+    id?: string;
     title: string;
     category?: string;
     year?: number;
@@ -28,6 +30,10 @@ export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
   if (!visible || !item) return null;
 
   const defaultCast = ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson', 'Josh Brolin'];
+
+  const { isMovieFavorite, toggleFavoriteMovie } = useFavorites();
+  const itemId = item.id || item.title;
+  const isFav = isMovieFavorite(itemId);
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
@@ -71,9 +77,11 @@ export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
 
             {/* Barra de Acciones de Usuario */}
             <View style={styles.actionsBar}>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => alert('Agregado a Mi Lista')}>
-                <Text style={styles.actionIcon}>➕</Text>
-                <Text style={styles.actionLabel}>Mi Lista</Text>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavoriteMovie(itemId)}>
+                <Text style={styles.actionIcon}>{isFav ? '⭐' : '➕'}</Text>
+                <Text style={[styles.actionLabel, isFav && { color: COLORS.gold, fontWeight: 'bold' }]}>
+                  {isFav ? 'En Mi Lista' : 'Mi Lista'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.actionBtn} onPress={() => alert('Calificado con ★★★★★')}>

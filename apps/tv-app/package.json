@@ -6,21 +6,25 @@
     "start": "react-native start",
     "start:clean": "react-native start --reset-cache",
     "web": "vite --host 0.0.0.0 --port 3002",
+    "build": "tsc && vite build",
     "android": "react-native run-android",
     "build:android": "cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
+    "@babel/runtime": "^7.20.0",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@nexotv/shared": "*",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.73.4",
-    "react-native-web": "^0.19.10",
-    "@babel/runtime": "^7.20.0",
-    "@nexotv/shared": "*"
+    "react-native-web": "^0.19.10"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@react-native/babel-preset": "^0.73.21",
     "@react-native-community/cli": "^12.3.2",
+    "@react-native/babel-preset": "^0.73.21",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@types/react-native": "^0.73.0",

@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, useWindowDimensions } from 'react-native';
 import { CHANNELS_CATALOG, Channel } from '../services/contentCatalog';
 import { FocusableItem } from '../components/FocusableItem';
 import { VideoPlayerModal } from '../components/VideoPlayerModal';
+import { useFavorites } from '../context/FavoritesContext';
 import { COLORS } from '../theme/colors';
 
 export const LiveTVScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
   const [channels, setChannels] = useState<Channel[]>(CHANNELS_CATALOG);
   const [playingChannel, setPlayingChannel] = useState<Channel | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const { isChannelFavorite, toggleFavoriteChannel } = useFavorites();
   const { width, height } = useWindowDimensions();
   const isMobile = Math.min(width, height) < 768;
 
   // Cargar canales y categorías en tiempo real desde el backend NestJS
   useEffect(() => {
-    fetch('http://localhost:3000/api/v1/tv/live')
+    fetch('https://nexotv-necn.onrender.com/api/v1/tv/live')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -43,7 +46,6 @@ export const LiveTVScreen: React.FC = () => {
         }
       })
       .catch(() => {
-        // Fallback endpoint
         fetch('http://localhost:3000/api/v1/content/channels')
           .then((res) => res.json())
           .then((data) => {
@@ -72,15 +74,16 @@ export const LiveTVScreen: React.FC = () => {
     ...Array.from(new Set(channels.map((ch) => (ch.category || 'GENERAL').toUpperCase()))),
   ];
 
-  const filteredChannels = selectedCategory === 'TODOS'
-    ? channels
-    : channels.filter((ch) => ch.category.toUpperCase().includes(selectedCategory.toUpperCase()));
+  // Filtrado por categoría y buscador en tiempo real
+  const filteredChannels = channels
+    .filter((ch) => (selectedCategory === 'TODOS' ? true : ch.category.toUpperCase().includes(selectedCategory.toUpperCase())))
+    .filter((ch) => (searchQuery ? ch.name.toLowerCase().includes(searchQuery.toLowerCase()) || ch.category.toLowerCase().includes(searchQuery.toLowerCase()) : true));
 
-  // Cálculo dinámico responsive para aprovechar el 100% del ancho de la pantalla y eliminar espacio vacío a la derecha
+  // Cálculo dinámico responsive
   const numColumns = width < 480 ? 4 : width < 768 ? 5 : width < 1100 ? 6 : 8;
   const horizontalPadding = isMobile ? 24 : 32;
   const gapSize = 10;
-  const computedCardWidth = Math.max(70, Math.floor((width - horizontalPadding - (gapSize * (numColumns - 1))) / numColumns));
+  const computedCardWidth = Math.max(70, Math.floor((width - horizontalPadding - gapSize * (numColumns - 1)) / numColumns));
 
   return (
     <View style={styles.outerContainer}>
@@ -96,30 +99,26 @@ export const LiveTVScreen: React.FC = () => {
             <Text style={styles.appNameText}>🔴 TV en Vivo ({filteredChannels.length} Canales)</Text>
             <Text style={styles.expirationText}>Suscripción Activa • Guía EPG HD</Text>
           </View>
-
-          <View style={styles.topHeaderRight}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => alert('Actualizando lista de canales...')}>
-              <Text style={styles.iconBtnText}>🔄</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
-        {/* Reproductor Vista Previa Superior */}
-        {playingChannel ? (
-          <View style={styles.previewActiveBox}>
-            <Text style={styles.previewActiveTitle}>▶ Reproduciendo: {playingChannel.name}</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.playerPreviewBox}
-            onPress={() => channels.length > 0 && setPlayingChannel(channels[0])}
-          >
-            <Text style={styles.playerPreviewIcon}>▶</Text>
-            <Text style={styles.playerPreviewTitle}>Toca un canal para reproducir en Vivo</Text>
-          </TouchableOpacity>
-        )}
+        {/* Buscador 🔍 en Tiempo Real para Canales */}
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar canal por nombre (ej: TN, TyC, Fox, ESPN, Telefe...)"
+            placeholderTextColor={COLORS.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearIcon}>✕</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
-        {/* Categorías Principales Chips */}
+        {/* Categorías Chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
           {dynamicCategories.map((cat) => (
             <TouchableOpacity
@@ -135,42 +134,55 @@ export const LiveTVScreen: React.FC = () => {
         </ScrollView>
 
         <Text style={styles.sectionCategoryTitle}>
-          {selectedCategory === 'TODOS' ? 'Todos los Canales en Vivo' : `Categoría: ${selectedCategory}`}
+          {searchQuery ? `Resultados para "${searchQuery}":` : selectedCategory === 'TODOS' ? 'Todos los Canales en Vivo' : `Categoría: ${selectedCategory}`}
         </Text>
 
-        {/* Grilla Deslizable de Canales de TV (Aprovechando 100% Ancho) */}
+        {/* Grilla de Canales con botón de Favoritos ⭐ */}
         <View style={styles.channelGrid}>
-          {filteredChannels.map((ch, idx) => (
-            <FocusableItem
-              key={`${ch.id}-${idx}`}
-              hasTVPreferredFocus={idx === 0}
-              style={[styles.gridChannelCard, { width: computedCardWidth }]}
-              onPress={() => setPlayingChannel(ch)}
-            >
-              <View style={styles.channelBadgeBox}>
-                {ch.logoUrl ? (
-                  <Image source={{ uri: ch.logoUrl }} style={styles.channelLogoImg} resizeMode="contain" />
-                ) : (
-                  <Text style={styles.channelEmojiText}>{ch.logoEmoji}</Text>
-                )}
-                {ch.isHD && <View style={styles.hdBadge}><Text style={styles.hdText}>HD</Text></View>}
-              </View>
-              <Text style={styles.channelCardName} numberOfLines={2}>{ch.name}</Text>
-            </FocusableItem>
-          ))}
+          {filteredChannels.map((ch, idx) => {
+            const isFav = isChannelFavorite(ch.id) || isChannelFavorite(ch.name);
+            return (
+              <FocusableItem
+                key={`${ch.id}-${idx}`}
+                hasTVPreferredFocus={idx === 0}
+                style={[styles.gridChannelCard, { width: computedCardWidth }]}
+                onPress={() => setPlayingChannel(ch)}
+              >
+                <TouchableOpacity
+                  style={styles.favBadgeBtn}
+                  onPress={() => {
+                    toggleFavoriteChannel(ch.id);
+                    toggleFavoriteChannel(ch.name);
+                  }}
+                >
+                  <Text style={styles.favBadgeStar}>{isFav ? '⭐' : '☆'}</Text>
+                </TouchableOpacity>
+
+                <View style={styles.channelBadgeBox}>
+                  {ch.logoUrl ? (
+                    <Image source={{ uri: ch.logoUrl }} style={styles.gridChannelLogo} resizeMode="contain" />
+                  ) : (
+                    <Text style={styles.gridChannelEmoji}>{ch.logoEmoji}</Text>
+                  )}
+                </View>
+                <Text style={styles.gridChannelName} numberOfLines={1}>{ch.name}</Text>
+              </FocusableItem>
+            );
+          })}
         </View>
       </ScrollView>
 
-      {/* Reproductor de Video Modal */}
-      <VideoPlayerModal
-        visible={playingChannel !== null}
-        title={playingChannel?.name || 'Canal en Vivo'}
-        subtitle={`En Vivo: ${playingChannel?.nowPlaying || ''}`}
-        streamUrl={playingChannel?.streamUrl}
-        posterEmoji={playingChannel?.logoEmoji}
-        contentId={playingChannel?.id}
-        onClose={() => setPlayingChannel(null)}
-      />
+      {/* Modal Reproductor HLS/MP4 */}
+      {playingChannel && (
+        <VideoPlayerModal
+          visible={playingChannel !== null}
+          streamUrl={playingChannel.streamUrl}
+          title={playingChannel.name}
+          contentId={playingChannel.id}
+          posterEmoji={playingChannel.logoEmoji}
+          onClose={() => setPlayingChannel(null)}
+        />
+      )}
     </View>
   );
 };
@@ -178,18 +190,18 @@ export const LiveTVScreen: React.FC = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#0F131C',
+    backgroundColor: COLORS.bgPrimary,
   },
   scrollContainer: {
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 150,
+    padding: 20,
+    paddingBottom: 80,
   },
   mobileContentContainer: {
     padding: 12,
-    paddingBottom: 160,
+    paddingBottom: 90,
   },
   topHeader: {
     flexDirection: 'row',
@@ -198,144 +210,117 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   topHeaderLeft: {
-    flexDirection: 'column',
+    flex: 1,
   },
   appNameText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: COLORS.textPrimary,
+    fontSize: 20,
     fontWeight: '900',
   },
   expirationText: {
-    color: COLORS.electricBlue,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    color: COLORS.textSecondary,
+    fontSize: 12,
   },
-  topHeaderRight: {
+  searchBox: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  iconBtn: {
-    padding: 6,
-  },
-  iconBtnText: {
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  previewActiveBox: {
-    backgroundColor: 'rgba(0, 184, 255, 0.15)',
-    borderColor: COLORS.electricBlue,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
-  },
-  previewActiveTitle: {
-    color: COLORS.electricBlue,
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  playerPreviewBox: {
-    height: 100,
-    backgroundColor: '#05070A',
-    borderRadius: 14,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: COLORS.borderDark,
+    marginBottom: 16,
   },
-  playerPreviewIcon: {
-    fontSize: 24,
-    color: COLORS.neonViolet,
-    marginBottom: 4,
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 10,
   },
-  playerPreviewTitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
+  searchInput: {
+    flex: 1,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+  },
+  clearIcon: {
+    color: COLORS.textMuted,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   categoriesScroll: {
     flexDirection: 'row',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   categoryChip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#334155',
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.cardBg,
     marginRight: 8,
-    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
   },
   categoryChipActive: {
-    borderColor: COLORS.neonViolet,
-    backgroundColor: COLORS.neonViolet,
+    backgroundColor: COLORS.electricBlue,
+    borderColor: COLORS.electricBlue,
   },
   categoryChipText: {
-    color: '#94A3B8',
+    color: COLORS.textSecondary,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   categoryChipTextActive: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
   },
   sectionCategoryTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   channelGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
     gap: 10,
-    width: '100%',
   },
   gridChannelCard: {
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  channelBadgeBox: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
+    height: 100,
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 6,
-    marginBottom: 6,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: COLORS.borderDark,
     position: 'relative',
   },
-  channelLogoImg: {
-    width: '85%',
-    height: '85%',
-  },
-  channelEmojiText: {
-    fontSize: 28,
-  },
-  hdBadge: {
+  favBadgeBtn: {
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: 'rgba(0, 184, 255, 0.85)',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
+    zIndex: 10,
+    padding: 2,
   },
-  hdText: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: 'bold',
+  favBadgeStar: {
+    fontSize: 16,
   },
-  channelCardName: {
-    color: '#E2E8F0',
+  channelBadgeBox: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  gridChannelLogo: {
+    width: 42,
+    height: 42,
+  },
+  gridChannelEmoji: {
+    fontSize: 28,
+  },
+  gridChannelName: {
+    color: COLORS.textPrimary,
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: 'bold',
     textAlign: 'center',
   },
 });

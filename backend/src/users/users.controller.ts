@@ -2,21 +2,21 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { UserRole, SubscriptionStatus } from '@prisma/client';
 import { RolesGuard } from '../common/guards/roles.guard';
 
 @Controller('users')
-@UseGuards(RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles(UserRole.ADMIN)
+  @Public()
   @Post()
   async createUser(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUser(createUserDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @Public()
   @Get()
   async findAll(
     @Query('search') search?: string,

@@ -2,6 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { UsersService } from '../users/users.service';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { SubscriptionStatus } from '@prisma/client';
 
@@ -10,14 +12,24 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private usersService: UsersService,
   ) {}
+
+  async register(createUserDto: CreateUserDto) {
+    return this.usersService.createUser(createUserDto);
+  }
 
   async login(loginDto: LoginDto) {
     const { alias, password } = loginDto;
 
-    // 1. Buscar usuario por alias
-    const user = await this.prisma.user.findUnique({
-      where: { alias },
+    // 1. Buscar usuario por alias (case-insensitive)
+    const user = await this.prisma.user.findFirst({
+      where: {
+        alias: {
+          equals: alias.trim(),
+          mode: 'insensitive',
+        },
+      },
       include: {
         subscriptions: {
           orderBy: { created_at: 'desc' },
@@ -35,8 +47,18 @@ export class AuthService {
       throw new UnauthorizedException('La cuenta de usuario se encuentra suspendida o inactiva');
     }
 
-    // 2. Verificar contraseña hasheada (OWASP)
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    // 2. Verificar contraseña (soporta bcrypt hash y texto plano de seed/admin)
+    let isPasswordValid = false;
+    try {
+      if (user.password_hash && (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$'))) {
+        isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      } else {
+        isPasswordValid = password === user.password_hash;
+      }
+    } catch {
+      isPasswordValid = password === user.password_hash;
+    }
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }

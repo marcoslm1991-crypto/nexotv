@@ -154,6 +154,12 @@ export interface SeriesRecord {
   seasons: SeasonRecord[];
 }
 
+const extractCleanUrl = (input: string): string => {
+  if (!input) return '';
+  const match = input.match(/(https?:\/\/[^\s]+)/i);
+  return match ? match[1].trim() : input.trim();
+};
+
 export function App() {
   // Auth state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -2223,7 +2229,7 @@ export function App() {
               const newSrc: ChannelSourceRecord = {
                 id: `src-${Date.now()}`,
                 channel_id: selectedChannelForSources.id,
-                url: srcUrl.trim(),
+                url: extractCleanUrl(srcUrl),
                 format: srcFormat,
                 is_active: true,
                 priority: srcPriority,

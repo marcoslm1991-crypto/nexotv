@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, TextInput, useWindowDimensions } from 'react-native';
 import { SERIES_CATALOG, Series, SeriesEpisode } from '../services/contentCatalog';
 import { FocusableItem } from '../components/FocusableItem';
 import { VideoPlayerModal } from '../components/VideoPlayerModal';
+import { useFavorites } from '../context/FavoritesContext';
 import { COLORS } from '../theme/colors';
 
 export const SeriesScreen: React.FC = () => {
   const [series, setSeries] = useState<Series[]>(SERIES_CATALOG);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [playingEpisode, setPlayingEpisode] = useState<{ title: string; duration: string; url?: string; emoji?: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const { isMovieFavorite, toggleFavoriteMovie } = useFavorites();
   const { width } = useWindowDimensions();
 
   // Fetch Series Feed from NestJS Backend API
   useEffect(() => {
-    fetch('http://localhost:3000/api/v1/vod/series/feed')
+    fetch('https://nexotv-necn.onrender.com/api/v1/vod/series/feed')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -61,41 +64,74 @@ export const SeriesScreen: React.FC = () => {
       .catch(() => {});
   }, []);
 
-  const numColumns = width < 480 ? 2 : width < 768 ? 3 : width < 1100 ? 4 : 5;
-  const gapSize = 14;
-  const computedCardWidth = Math.max(140, Math.floor((width - 48 - (gapSize * (numColumns - 1))) / numColumns));
+  const filteredSeries = searchQuery
+    ? series.filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    : series;
+
+  // Responsive grid calculation for series
+  const numColumns = width < 480 ? 3 : width < 768 ? 4 : width < 1100 ? 5 : 6;
+  const gapSize = 12;
+  const computedCardWidth = Math.max(90, Math.floor((width - 48 - gapSize * (numColumns - 1)) / numColumns));
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>📺 Series VOD & Maratón ({series.length} Series)</Text>
-        <Text style={styles.subtitle}>Las mejores producciones por temporadas completas</Text>
+        <Text style={styles.title}>📺 Series & Temporadas ({filteredSeries.length} Series)</Text>
+        <Text style={styles.subtitle}>Las mejores producciones originales y episodios en HD</Text>
+      </View>
+
+      {/* Buscador 🔍 de Series */}
+      <View style={styles.searchBox}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar serie por título..."
+          placeholderTextColor={COLORS.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery ? (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Text style={styles.clearIcon}>✕</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.gridContainer}>
         <View style={styles.grid}>
-          {series.map((ser, idx) => (
-            <FocusableItem
-              key={ser.id}
-              hasTVPreferredFocus={idx === 0}
-              style={[styles.seriesCard, { width: computedCardWidth }]}
-              focusedStyle={styles.seriesCardFocused}
-              onPress={() => setSelectedSeries(ser)}
-            >
-              <View style={styles.posterBox}>
-                {ser.posterUrl ? (
-                  <Image source={{ uri: ser.posterUrl }} style={styles.posterImage} resizeMode="cover" />
-                ) : (
-                  <Text style={styles.posterEmoji}>{ser.posterEmoji}</Text>
-                )}
-                <View style={styles.badgeBox}>
-                  <Text style={styles.badgeText}>{ser.seasonsCount} Temp</Text>
+          {filteredSeries.map((ser, idx) => {
+            const isFav = isMovieFavorite(ser.id);
+            return (
+              <FocusableItem
+                key={ser.id}
+                hasTVPreferredFocus={idx === 0}
+                style={[styles.seriesCard, { width: computedCardWidth }]}
+                focusedStyle={styles.seriesCardFocused}
+                onPress={() => setSelectedSeries(ser)}
+              >
+                <View style={styles.posterBox}>
+                  {(ser as any).posterUrl ? (
+                    <Image source={{ uri: (ser as any).posterUrl }} style={styles.posterImage} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.posterEmoji}>{ser.posterEmoji}</Text>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.favBadgeBtn}
+                    onPress={() => toggleFavoriteMovie(ser.id)}
+                  >
+                    <Text style={styles.favStarText}>{isFav ? '⭐' : '☆'}</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.badgeBox}>
+                    <Text style={styles.badgeText}>{ser.seasonsCount} Temp</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.seriesTitle} numberOfLines={1}>{ser.title}</Text>
-              <Text style={styles.seriesMeta}>{ser.episodesCount} Episodios • {ser.rating}</Text>
-            </FocusableItem>
-          ))}
+                <Text style={styles.seriesTitle} numberOfLines={1}>{ser.title}</Text>
+                <Text style={styles.seriesMeta}>{ser.episodesCount} Episodios • {ser.rating}</Text>
+              </FocusableItem>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -108,8 +144,8 @@ export const SeriesScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.seriesDetailCard}>
-            {selectedSeries?.posterUrl ? (
-              <Image source={{ uri: selectedSeries.posterUrl }} style={{ width: 80, height: 110, borderRadius: 8, alignSelf: 'center', marginBottom: 10 }} />
+            {(selectedSeries as any)?.posterUrl ? (
+              <Image source={{ uri: (selectedSeries as any).posterUrl }} style={{ width: 80, height: 110, borderRadius: 8, alignSelf: 'center', marginBottom: 10 }} />
             ) : (
               <Text style={styles.detailEmoji}>{selectedSeries?.posterEmoji}</Text>
             )}
@@ -118,44 +154,45 @@ export const SeriesScreen: React.FC = () => {
 
             <Text style={styles.episodesHeader}>Episodios Disponibles ({selectedSeries?.episodes.length}):</Text>
 
-            <ScrollView style={styles.episodeList}>
-              {selectedSeries?.episodes.map((ep) => (
-                <TouchableOpacity
-                  key={ep.id}
+            <ScrollView style={styles.episodesScroll}>
+              {selectedSeries?.episodes.map((ep, idx) => (
+                <FocusableItem
+                  key={`${ep.id}-${idx}`}
                   style={styles.episodeRow}
+                  focusedStyle={styles.episodeRowFocused}
                   onPress={() => {
                     setPlayingEpisode({
                       title: `${selectedSeries.title} - ${ep.title}`,
                       duration: ep.duration,
-                      url: (ep as any).streamUrl,
+                      url: ep.streamUrl,
                       emoji: selectedSeries.posterEmoji,
                     });
                   }}
                 >
-                  <View style={styles.playIconBox}><Text style={styles.playIconText}>▶</Text></View>
-                  <View style={styles.epInfo}>
-                    <Text style={styles.epTitle}>{ep.title}</Text>
-                    <Text style={styles.epSynopsis}>{ep.synopsis}</Text>
+                  <Text style={styles.episodeNumber}>Cap. {ep.episodeNumber || idx + 1}</Text>
+                  <View style={styles.episodeInfo}>
+                    <Text style={styles.episodeTitle}>{ep.title}</Text>
+                    <Text style={styles.episodeDuration}>Duración: {ep.duration}</Text>
                   </View>
-                  <Text style={styles.epDuration}>{ep.duration}</Text>
-                </TouchableOpacity>
+                  <Text style={styles.playIcon}>▶</Text>
+                </FocusableItem>
               ))}
             </ScrollView>
 
             <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedSeries(null)}>
-              <Text style={styles.closeText}>VOLVER A SERIES</Text>
+              <Text style={styles.closeBtnText}>CERRAR</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal de Reproducción de Video de Episodio */}
+      {/* Reproductor de Video para Episodio Seleccionado */}
       <VideoPlayerModal
         visible={playingEpisode !== null}
-        title={playingEpisode?.title || 'Episodio'}
-        subtitle={`Duración: ${playingEpisode?.duration || '45m'}`}
+        title={playingEpisode?.title || 'Reproduciendo Episodio'}
+        subtitle={`Serie HD • ${playingEpisode?.duration || ''}`}
         streamUrl={playingEpisode?.url}
-        posterEmoji={playingEpisode?.emoji || '📺'}
+        posterEmoji={playingEpisode?.emoji}
         onClose={() => setPlayingEpisode(null)}
       />
     </View>
@@ -169,110 +206,144 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   title: {
-    color: COLORS.textPrimary,
-    fontSize: 24,
-    fontWeight: '900',
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   subtitle: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
+    color: COLORS.electricBlue,
+    fontSize: 12,
     marginTop: 4,
   },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
+    marginBottom: 16,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+  },
+  clearIcon: {
+    color: COLORS.textMuted,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   gridContainer: {
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    gap: 12,
   },
   seriesCard: {
-    backgroundColor: COLORS.bgSecondary,
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.borderDark,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   seriesCardFocused: {
-    borderColor: COLORS.electricBlue,
-    backgroundColor: COLORS.cardBgHover,
-    transform: [{ scale: 1.03 }],
+    transform: [{ scale: 1.05 }],
   },
   posterBox: {
-    height: 140,
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 10,
+    width: '100%',
+    aspectRatio: 0.68,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    position: 'relative',
     overflow: 'hidden',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    position: 'relative',
   },
   posterImage: {
     width: '100%',
     height: '100%',
   },
   posterEmoji: {
-    fontSize: 48,
+    fontSize: 40,
+  },
+  favBadgeBtn: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  favStarText: {
+    fontSize: 14,
   },
   badgeBox: {
     position: 'absolute',
-    top: 6,
+    bottom: 6,
     right: 6,
-    backgroundColor: COLORS.neonViolet,
+    backgroundColor: 'rgba(0, 184, 255, 0.9)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   badgeText: {
-    color: COLORS.textPrimary,
+    color: '#000000',
     fontSize: 10,
     fontWeight: 'bold',
   },
   seriesTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 2,
   },
   seriesMeta: {
-    color: COLORS.textSecondary,
-    fontSize: 11,
+    color: '#94A3B8',
+    fontSize: 10,
+    marginTop: 2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(8, 11, 20, 0.92)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   seriesDetailCard: {
-    width: '90%',
-    maxWidth: 580,
+    width: '100%',
+    maxWidth: 500,
     maxHeight: '85%',
-    backgroundColor: COLORS.bgSecondary,
+    backgroundColor: '#0F131C',
     borderRadius: 16,
     padding: 24,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: COLORS.electricBlue,
   },
   detailEmoji: {
-    fontSize: 46,
-    textAlign: 'center',
-    marginBottom: 8,
+    fontSize: 50,
+    alignSelf: 'center',
+    marginBottom: 10,
   },
   detailTitle: {
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
   },
   detailSynopsis: {
-    color: COLORS.textSecondary,
+    color: '#94A3B8',
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 16,
@@ -284,62 +355,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  episodeList: {
+  episodesScroll: {
     maxHeight: 220,
     marginBottom: 16,
   },
   episodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: '#1E293B',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.borderDark,
   },
-  playIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.electricBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  episodeRowFocused: {
+    backgroundColor: COLORS.neonViolet,
   },
-  playIconText: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
+  episodeNumber: {
+    color: COLORS.electricBlue,
+    fontSize: 12,
     fontWeight: 'bold',
+    width: 60,
   },
-  epInfo: {
+  episodeInfo: {
     flex: 1,
   },
-  epTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
+  episodeTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: 'bold',
   },
-  epSynopsis: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
+  episodeDuration: {
+    color: '#94A3B8',
+    fontSize: 11,
   },
-  epDuration: {
-    color: COLORS.neonViolet,
-    fontSize: 12,
+  playIcon: {
+    color: '#00F0FF',
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 8,
   },
   closeBtn: {
-    backgroundColor: COLORS.neonViolet,
+    backgroundColor: '#334155',
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignSelf: 'center',
+    borderRadius: 10,
+    alignItems: 'center',
   },
-  closeText: {
-    color: COLORS.textPrimary,
+  closeBtnText: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 14,
   },
 });

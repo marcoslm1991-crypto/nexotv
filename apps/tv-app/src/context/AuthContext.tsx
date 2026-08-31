@@ -19,8 +19,8 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<UserSession | null>(null);
 
-  // Adaptar puerto de backend entre Navegador Web (localhost) y Emulador Android (10.0.2.2)
-  const apiBaseUrl = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+  // URL de Producción en Render con HTTPS y SSL
+  const apiBaseUrl = 'https://nexotv-necn.onrender.com/api/v1';
 
   const login = async (alias: string, password: string) => {
     try {

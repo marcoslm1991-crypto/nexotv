@@ -11,8 +11,8 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const { login } = useAuth();
-  const [alias, setAlias] = useState('MARCOS01');
-  const [password, setPassword] = useState('1234');
+  const [alias, setAlias] = useState('');
+  const [password, setPassword] = useState('');
   const [activeField, setActiveField] = useState<'ALIAS' | 'PASSWORD'>('ALIAS');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,12 +35,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
     }
   };
 
-  const handleLoginSubmit = () => {
+  const handleLoginSubmit = async () => {
+    if (!alias.trim() || !password.trim()) {
+      setError('Por favor ingresá tu usuario y contraseña');
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      const res = await login(alias.trim(), password.trim());
       setLoading(false);
-      onSuccess();
-    }, 200);
+      if (res.success) {
+        onSuccess();
+      } else {
+        setError(res.message || 'Credenciales inválidas. Verificá tu usuario y PIN.');
+      }
+    } catch (e: any) {
+      setLoading(false);
+      setError('Error de conexión con el servidor.');
+    }
   };
 
   return (

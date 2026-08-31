@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform } from 'react-native';
 import { COLORS } from '../theme/colors';
+import { useFavorites } from '../context/FavoritesContext';
 
 interface VideoPlayerModalProps {
   visible: boolean;
@@ -27,6 +28,21 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const heartbeatIntervalRef = useRef<any>(null);
+
+  const { favoriteChannels, favoriteMovies, toggleFavoriteChannel, toggleFavoriteMovie } = useFavorites();
+  
+  const isFavInPlayer =
+    favoriteChannels.includes(contentId || '') ||
+    favoriteChannels.includes(title) ||
+    favoriteMovies.includes(contentId || '') ||
+    favoriteMovies.includes(title);
+
+  const handleToggleFav = () => {
+    toggleFavoriteChannel(contentId || title);
+    toggleFavoriteChannel(title);
+    toggleFavoriteMovie(contentId || title);
+    toggleFavoriteMovie(title);
+  };
 
   const isYouTube = streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be');
 
@@ -89,10 +105,9 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     return url;
   };
 
-  // 1. Autorización de Pantalla y Heartbeat con Backend NestJS (Puerto 3000)
+  // Autorización de Pantalla y Heartbeat con Backend NestJS
   useEffect(() => {
     if (!visible) {
-      // Liberar sesión al cerrar
       if (activeStreamId) {
         fetch('http://localhost:3000/streams/stop', {
           method: 'POST',
@@ -109,14 +124,13 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
       return;
     }
 
-    // Solicitar autorización de pantalla al backend
     const authorizeStream = async () => {
       try {
         const response = await fetch('http://localhost:3000/streams/authorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            profile_id: 'p1', // Perfil actual
+            profile_id: 'p1',
             device_uuid: 'web-device-browser-01',
             device_name: 'Navegador Web / Smart TV Client',
             content_id: contentId,
@@ -134,7 +148,6 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
         setIsAuthorized(true);
         setActiveStreamId(data.active_stream_id);
 
-        // Iniciar pulso heartbeat cada 25 segundos
         heartbeatIntervalRef.current = setInterval(() => {
           if (data.active_stream_id) {
             fetch('http://localhost:3000/streams/heartbeat', {
@@ -146,7 +159,6 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
         }, 25000);
 
       } catch (e) {
-        // En caso de que el backend no responda, autorizar modo fallback para prototipo
         setIsAuthorized(true);
       }
     };
@@ -160,7 +172,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     };
   }, [visible, contentId]);
 
-  // 2. Carga de Video HLS / HTML5 (Solo en Web)
+  // Carga de Video HLS
   useEffect(() => {
     if (Platform.OS === 'web' && visible && isAuthorized && streamUrl && videoRef.current && !isYouTube) {
       if (streamUrl.includes('.m3u8')) {
@@ -203,23 +215,36 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     onClose();
   };
 
-  const videoHeight = isFullscreen ? (Platform.OS === 'web' ? 'calc(100vh - 110px)' : '100%') : '340px';
+  const videoHeight = isFullscreen ? (Platform.OS === 'web' ? 'calc(100vh - 110px)' : '100%') : '320px';
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={handleClose}>
       <View style={[styles.modalOverlay, isFullscreen && styles.modalOverlayFullscreen]}>
         <View style={[styles.playerCard, isFullscreen && styles.playerCardFullscreen]}>
+          {/* Header Row */}
           <View style={styles.headerRow}>
             <View style={styles.titleBox}>
               <Text style={styles.playerTitle} numberOfLines={1}>{title}</Text>
               {subtitle && <Text style={styles.playerSubtitle}>{subtitle}</Text>}
             </View>
-            <TouchableOpacity style={styles.closeBadge} onPress={handleClose}>
-              <Text style={styles.closeBadgeText}>✖ CERRAR TRANSMISIÓN</Text>
-            </TouchableOpacity>
+
+            <View style={styles.headerActions}>
+              {/* Botón de Estrella en Header */}
+              <TouchableOpacity
+                style={[styles.headerFavBtn, isFavInPlayer && styles.headerFavBtnActive]}
+                onPress={handleToggleFav}
+              >
+                <Text style={styles.headerFavStar}>{isFavInPlayer ? '⭐' : '☆'}</Text>
+              </TouchableOpacity>
+
+              {/* Botón de Cierre */}
+              <TouchableOpacity style={styles.closeBadge} onPress={handleClose}>
+                <Text style={styles.closeBadgeText}>✖ CERRAR</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Si se superó el límite de pantallas o la suscripción venció */}
+          {/* Error o Reproductor de Video */}
           {streamError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorIcon}>🚫</Text>
@@ -231,6 +256,14 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             </View>
           ) : (
             <View style={[styles.videoContainer, isFullscreen && styles.videoContainerFullscreen]}>
+              {/* Botón Flotante ⭐ Sobre el Video (Visible en Vertical y en Pantalla Completa Horizontal) */}
+              <TouchableOpacity
+                style={[styles.floatingStarOverlay, isFavInPlayer && styles.floatingStarOverlayActive]}
+                onPress={handleToggleFav}
+              >
+                <Text style={styles.floatingStarIcon}>{isFavInPlayer ? '⭐' : '☆'}</Text>
+              </TouchableOpacity>
+
               {Platform.OS === 'web' ? (
                 isYouTube ? (
                   <iframe
@@ -264,21 +297,23 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               ) : (
                 <View style={[styles.nativeVideoPlaceholder, isFullscreen && { height: '100%', flex: 1 }]}>
                   <Text style={styles.videoEmoji}>{posterEmoji}</Text>
-                  <Text style={styles.videoStatusText}>▶ Transmitiendo señal en vivo desde servidor HLS</Text>
+                  <Text style={styles.videoStatusText}>▶ Transmitiendo señal en vivo HD</Text>
                 </View>
               )}
             </View>
           )}
 
+          {/* Footer de Controles Compacto (Sin desbordamientos) */}
           <View style={styles.controlsFooter}>
             <View style={styles.liveIndicator}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>TRANSMISIÓN EN DIRECTO FULL HD 1080p</Text>
+              <Text style={styles.liveText}>EN VIVO HD 1080p</Text>
             </View>
+
             <TouchableOpacity style={styles.fullscreenBtn} onPress={toggleFullscreen}>
               <Text style={styles.fullscreenIcon}>⛶</Text>
               <Text style={styles.fullscreenText}>
-                {isFullscreen ? 'Salir de Pantalla Completa' : 'Pantalla Completa'}
+                {isFullscreen ? 'Salir' : 'Pantalla Completa'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -300,11 +335,11 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   playerCard: {
-    width: '90%',
+    width: '94%',
     maxWidth: 720,
     backgroundColor: COLORS.bgSecondary,
     borderRadius: 18,
-    padding: 24,
+    padding: 16,
     borderWidth: 2,
     borderColor: COLORS.electricBlue,
     shadowColor: COLORS.neonViolet,
@@ -319,7 +354,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     maxHeight: '100%',
     borderRadius: 0,
-    padding: 12,
+    padding: 8,
     borderWidth: 0,
     justifyContent: 'space-between',
     backgroundColor: '#000000',
@@ -333,82 +368,127 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   titleBox: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   playerTitle: {
     color: COLORS.textPrimary,
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   playerSubtitle: {
     color: COLORS.electricBlue,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     marginTop: 2,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerFavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1.5,
+    borderColor: COLORS.borderDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerFavBtnActive: {
+    backgroundColor: 'rgba(255, 215, 0, 0.25)',
+    borderColor: '#FFD700',
+  },
+  headerFavStar: {
+    fontSize: 20,
+    marginTop: -2,
+  },
   closeBadge: {
     backgroundColor: COLORS.neonViolet,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
   },
   closeBadgeText: {
     color: COLORS.textPrimary,
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 11,
   },
   videoContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  floatingStarOverlay: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 999,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
   },
+  floatingStarOverlayActive: {
+    backgroundColor: 'rgba(255, 215, 0, 0.85)',
+    borderColor: '#FFD700',
+  },
+  floatingStarIcon: {
+    fontSize: 24,
+  },
   errorContainer: {
-    height: 320,
+    height: 280,
     backgroundColor: COLORS.cardBg,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
     borderWidth: 1,
     borderColor: '#E50914',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   errorIcon: {
-    fontSize: 48,
-    marginBottom: 10,
+    fontSize: 44,
+    marginBottom: 8,
   },
   errorTitle: {
     color: '#FF4D4D',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   errorMessage: {
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 20,
-    maxWidth: 520,
+    marginBottom: 16,
+    lineHeight: 18,
+    maxWidth: 480,
   },
   errorBtn: {
     backgroundColor: COLORS.electricBlue,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   errorBtnText: {
     color: COLORS.textPrimary,
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 12,
   },
   nativeVideoPlaceholder: {
     width: '100%',
-    height: 320,
+    height: 280,
     backgroundColor: '#000000',
     borderRadius: 12,
     justifyContent: 'center',
@@ -417,13 +497,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderDark,
   },
   videoEmoji: {
-    fontSize: 54,
-    marginBottom: 10,
+    fontSize: 48,
+    marginBottom: 8,
   },
   videoStatusText: {
     color: COLORS.electricBlue,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
   controlsFooter: {
     flexDirection: 'row',
@@ -431,7 +511,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: COLORS.borderDark,
-    paddingTop: 12,
+    paddingTop: 10,
   },
   liveIndicator: {
     flexDirection: 'row',
@@ -442,12 +522,12 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#00F0FF',
-    marginRight: 8,
+    marginRight: 6,
   },
   liveText: {
     color: COLORS.textPrimary,
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 11,
   },
   fullscreenBtn: {
     flexDirection: 'row',
@@ -455,19 +535,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 240, 255, 0.15)',
     borderWidth: 1.5,
     borderColor: '#00F0FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
-    gap: 6,
+    gap: 4,
   },
   fullscreenIcon: {
     color: '#00F0FF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
   },
   fullscreenText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
 });

@@ -12,6 +12,7 @@ import { StreamsModule } from './streams/streams.module';
 import { ContentModule } from './content/content.module';
 import { TvModule } from './tv/tv.module';
 import { VodModule } from './vod/vod.module';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
@@ -35,6 +36,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ContentModule,
     TvModule,
     VodModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

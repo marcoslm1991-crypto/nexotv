@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, useWindowDimensions, Modal } from 'react-native';
 import { useProfile } from '../context/ProfileContext';
 import { Profile } from '../types/navigation.types';
 import { COLORS } from '../theme/colors';
@@ -10,19 +10,29 @@ interface ProfileSelectionScreenProps {
 }
 
 export const ProfileSelectionScreen: React.FC<ProfileSelectionScreenProps> = ({ onSelect }) => {
-  const { selectProfile } = useProfile();
+  const { profiles, selectProfile, updateProfileName } = useProfile();
   const { width, height } = useWindowDimensions();
   const isMobile = Math.min(width, height) < 768;
 
-  const [profiles] = useState<Profile[]>([
-    { id: 'p1', name: 'Perfil Principal' },
-    { id: 'p2', name: 'Familia' },
-    { id: 'p3', name: 'Niños' },
-  ]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [tempName, setTempName] = useState('');
 
   const handleChoose = (p: Profile) => {
-    selectProfile(p);
-    onSelect();
+    if (isEditing) {
+      setEditingProfile(p);
+      setTempName(p.name);
+    } else {
+      selectProfile(p);
+      onSelect();
+    }
+  };
+
+  const handleSaveName = () => {
+    if (editingProfile && tempName.trim()) {
+      updateProfileName(editingProfile.id, tempName);
+      setEditingProfile(null);
+    }
   };
 
   return (
@@ -31,8 +41,12 @@ export const ProfileSelectionScreen: React.FC<ProfileSelectionScreenProps> = ({ 
         <NexoLogo size={isMobile ? "medium" : "large"} showSubtitle={true} />
       </View>
 
-      <Text style={[styles.headerTitle, isMobile && styles.mobileHeaderTitle]}>¿Quién está viendo ahora?</Text>
-      <Text style={[styles.headerSubtitle, isMobile && styles.mobileHeaderSubtitle]}>Seleccioná un perfil para continuar</Text>
+      <Text style={[styles.headerTitle, isMobile && styles.mobileHeaderTitle]}>
+        {isEditing ? '✏️ Seleccioná un Perfil para Renombrar' : '¿Quién está viendo ahora?'}
+      </Text>
+      <Text style={[styles.headerSubtitle, isMobile && styles.mobileHeaderSubtitle]}>
+        {isEditing ? 'Tocá en cualquier tarjeta para cambiar su nombre' : 'Seleccioná un perfil para ingresar'}
+      </Text>
 
       <View style={[styles.profilesGrid, isMobile && styles.mobileProfilesGrid]}>
         {profiles.map((p, idx) => (
@@ -42,13 +56,14 @@ export const ProfileSelectionScreen: React.FC<ProfileSelectionScreenProps> = ({ 
             style={[
               styles.profileCard,
               idx === 0 && styles.profileCardPrimary,
+              isEditing && styles.profileCardEditing,
               isMobile && styles.mobileProfileCard,
             ]}
             onPress={() => handleChoose(p)}
           >
             <View style={[
               styles.avatarCircle,
-              idx === 0 ? styles.avatarPrimary : styles.avatarSecondary,
+              idx === 0 ? styles.avatarPrimary : idx === 1 ? styles.avatarSecondary : styles.avatarKids,
               isMobile && styles.mobileAvatarCircle,
             ]}>
               <Text style={[styles.avatarInitial, isMobile && styles.mobileAvatarInitial]}>
@@ -58,9 +73,53 @@ export const ProfileSelectionScreen: React.FC<ProfileSelectionScreenProps> = ({ 
             <Text style={[styles.profileName, isMobile && styles.mobileProfileName]} numberOfLines={1}>
               {p.name}
             </Text>
+            {isEditing && (
+              <View style={styles.editBadge}>
+                <Text style={styles.editBadgeText}>✏️ Editar</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Botón para activar/desactivar la edición de perfiles */}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={[styles.manageBtn, isEditing && styles.manageBtnActive]}
+        onPress={() => setIsEditing(!isEditing)}
+      >
+        <Text style={styles.manageBtnText}>
+          {isEditing ? '✓ FINALIZAR EDICIÓN' : '✏️ ADMINISTRAR / CAMBIAR NOMBRES'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* MODAL PARA CAMBIAR NOMBRE DE PERFIL */}
+      {editingProfile && (
+        <Modal transparent animationType="fade" visible={!!editingProfile}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>Editar Nombre de Perfil</Text>
+              <Text style={styles.modalSub}>Nombre actual: {editingProfile.name}</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempName}
+                onChangeText={setTempName}
+                placeholder="Ej: Marcos, Habitación, Niños..."
+                placeholderTextColor={COLORS.textMuted}
+                autoFocus
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingProfile(null)}>
+                  <Text style={styles.btnText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSaveName}>
+                  <Text style={styles.btnTextBold}>Guardar Nombre</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 };
@@ -106,9 +165,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     flexWrap: 'wrap',
+    marginBottom: 30,
   },
   mobileProfilesGrid: {
     gap: 12,
+    marginBottom: 20,
   },
   profileCard: {
     width: 150,
@@ -129,10 +190,10 @@ const styles = StyleSheet.create({
   },
   profileCardPrimary: {
     borderColor: COLORS.electricBlue,
-    shadowColor: COLORS.neonViolet,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
+  },
+  profileCardEditing: {
+    borderColor: COLORS.gold,
+    borderStyle: 'dashed',
   },
   avatarCircle: {
     width: 70,
@@ -154,6 +215,9 @@ const styles = StyleSheet.create({
   avatarSecondary: {
     backgroundColor: COLORS.neonViolet,
   },
+  avatarKids: {
+    backgroundColor: '#EC4899',
+  },
   avatarInitial: {
     color: COLORS.textPrimary,
     fontSize: 32,
@@ -170,5 +234,100 @@ const styles = StyleSheet.create({
   },
   mobileProfileName: {
     fontSize: 11,
+  },
+  editBadge: {
+    marginTop: 6,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+  },
+  editBadgeText: {
+    color: COLORS.gold,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  manageBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
+  },
+  manageBtnActive: {
+    backgroundColor: COLORS.gold,
+    borderColor: COLORS.gold,
+  },
+  manageBtnText: {
+    color: COLORS.textPrimary,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalBox: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: COLORS.electricBlue,
+  },
+  modalTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  modalSub: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: COLORS.bgPrimary,
+    borderRadius: 10,
+    padding: 12,
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  cancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.cardBg,
+  },
+  saveBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: COLORS.electricBlue,
+  },
+  btnText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  btnTextBold: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

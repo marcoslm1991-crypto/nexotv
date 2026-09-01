@@ -18,7 +18,10 @@ const public_decorator_1 = require("../common/decorators/public.decorator");
 const path_1 = require("path");
 const fs = require("fs");
 let AdminController = class AdminController {
-    getAdminRoot(res) {
+    getAdminRootNoSlash(req, res) {
+        if (!req.originalUrl.endsWith('/')) {
+            return res.redirect('/admin/');
+        }
         return this.serveFile('index.html', res);
     }
     getAdminAsset(req, res) {
@@ -58,15 +61,16 @@ let AdminController = class AdminController {
 exports.AdminController = AdminController;
 __decorate([
     (0, public_decorator_1.Public)(),
-    (0, common_1.Get)(),
-    __param(0, (0, common_1.Res)()),
+    (0, common_1.Get)('admin'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
-], AdminController.prototype, "getAdminRoot", null);
+], AdminController.prototype, "getAdminRootNoSlash", null);
 __decorate([
     (0, public_decorator_1.Public)(),
-    (0, common_1.Get)('*'),
+    (0, common_1.Get)('admin/*'),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
@@ -74,6 +78,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getAdminAsset", null);
 exports.AdminController = AdminController = __decorate([
-    (0, common_1.Controller)('admin')
+    (0, common_1.Controller)()
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

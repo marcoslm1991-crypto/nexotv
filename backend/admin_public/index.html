@@ -13,6 +13,19 @@
         color: #F8FAFC;
       }
     </style>
+    <script>
+      try {
+        var raw = localStorage.getItem('nexotv_admin_channels');
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed) || parsed.length === 0) {
+            localStorage.removeItem('nexotv_admin_channels');
+          }
+        }
+      } catch (e) {
+        localStorage.removeItem('nexotv_admin_channels');
+      }
+    </script>
     <script type="module" crossorigin src="/admin/assets/index-DeKkLnm1.js"></script>
   </head>
   <body>

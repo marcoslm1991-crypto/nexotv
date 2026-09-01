@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const public_decorator_1 = require("../common/decorators/public.decorator");
+const throttler_1 = require("@nestjs/throttler");
 const path_1 = require("path");
 const fs = require("fs");
 let AdminController = class AdminController {
@@ -78,6 +79,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getAdminAsset", null);
 exports.AdminController = AdminController = __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.Controller)()
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

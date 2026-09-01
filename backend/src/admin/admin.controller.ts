@@ -1,9 +1,11 @@
 import { Controller, Get, Res, Req } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
 
+@SkipThrottle()
 @Controller()
 export class AdminController {
   @Public()

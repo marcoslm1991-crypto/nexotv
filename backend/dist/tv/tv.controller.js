@@ -14,12 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TvController = void 0;
 const common_1 = require("@nestjs/common");
-const client_1 = require("@prisma/client");
 const tv_service_1 = require("./tv.service");
 const public_decorator_1 = require("../common/decorators/public.decorator");
-const roles_decorator_1 = require("../common/decorators/roles.decorator");
-const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
-const roles_guard_1 = require("../common/guards/roles.guard");
 const tv_dto_1 = require("./dto/tv.dto");
 let TvController = class TvController {
     constructor(tvService) {
@@ -87,24 +83,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "getLiveFeed", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('admin/stats'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "getStats", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('admin/categories'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "getCategories", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('admin/categories'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -112,8 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "createCategory", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Put)('admin/categories/:id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -122,8 +114,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "updateCategory", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Delete)('admin/categories/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -131,8 +122,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "deleteCategory", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('admin/channels'),
     __param(0, (0, common_1.Query)('search')),
     __param(1, (0, common_1.Query)('category_id')),
@@ -145,8 +135,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "getChannels", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('admin/channels'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -154,8 +143,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "createChannel", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Put)('admin/channels/:id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -164,8 +152,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "updateChannel", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Delete)('admin/channels/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -173,8 +160,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "deleteChannel", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('admin/sources'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -183,8 +169,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "addSource", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Put)('admin/sources/:id'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Param)('id')),
@@ -193,8 +178,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "updateSource", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Delete)('admin/sources/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -202,8 +186,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "deleteSource", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('admin/sources/quick-switch'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -212,8 +195,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TvController.prototype, "quickSwitchSource", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('admin/sources/test'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

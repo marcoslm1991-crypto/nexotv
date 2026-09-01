@@ -550,15 +550,6 @@ export function App() {
       })
       .catch((err) => console.log('Usando catálogo inicial local:', err));
 
-  // Guardar automáticamente cambios de canales en localStorage
-  useEffect(() => {
-    if (channels && channels.length > 0) {
-      try {
-        localStorage.setItem('nexotv_admin_channels', JSON.stringify(channels));
-      } catch (e) {}
-    }
-  }, [channels]);
-
     fetch('https://nexotv-necn.onrender.com/api/v1/users')
       .then((res) => res.json())
       .then((data) => {
@@ -580,6 +571,15 @@ export function App() {
       })
       .catch((err) => console.log('Error cargando usuarios desde API:', err));
   }, []);
+
+  // Guardar automáticamente cambios de canales en localStorage
+  useEffect(() => {
+    if (channels && channels.length > 0) {
+      try {
+        localStorage.setItem('nexotv_admin_channels', JSON.stringify(channels));
+      } catch (e) {}
+    }
+  }, [channels]);
 
   // Synchronize selections
   useEffect(() => {

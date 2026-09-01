@@ -162,7 +162,7 @@ const extractCleanUrl = (input: string): string => {
 
 export function App() {
   // Auth state
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(true);
   const [adminUser, setAdminUser] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loginError, setLoginError] = useState('');

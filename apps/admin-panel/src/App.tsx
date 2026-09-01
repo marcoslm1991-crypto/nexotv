@@ -519,12 +519,37 @@ export function App() {
           });
 
           if (fetchedChannels.length > 0) {
-            setChannels(fetchedChannels);
+            const savedLocalStr = localStorage.getItem('nexotv_admin_channels');
+            if (savedLocalStr) {
+              try {
+                const localChs: ChannelRecord[] = JSON.parse(savedLocalStr);
+                const merged = [...localChs];
+                fetchedChannels.forEach((fc) => {
+                  if (!merged.some((lc) => lc.id === fc.id || lc.name.trim().toLowerCase() === fc.name.trim().toLowerCase())) {
+                    merged.push(fc);
+                  }
+                });
+                setChannels(merged);
+              } catch (e) {
+                setChannels(fetchedChannels);
+              }
+            } else {
+              setChannels(fetchedChannels);
+            }
             if (fetchedCategories.length > 0) setCategories(fetchedCategories);
           }
         }
       })
       .catch((err) => console.log('Usando catálogo inicial local:', err));
+
+  // Guardar automáticamente cambios de canales en localStorage
+  useEffect(() => {
+    if (channels && channels.length > 0) {
+      try {
+        localStorage.setItem('nexotv_admin_channels', JSON.stringify(channels));
+      } catch (e) {}
+    }
+  }, [channels]);
 
     fetch('https://nexotv-necn.onrender.com/api/v1/users')
       .then((res) => res.json())

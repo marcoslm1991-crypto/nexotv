@@ -704,6 +704,7 @@ export function App() {
           created_at: new Date().toISOString().split('T')[0],
         });
       }
+      const cleanInitialUrl = extractCleanUrl(chInitialUrl);
       const newCh: ChannelRecord = {
         id: newChId,
         name: chName,
@@ -717,6 +718,34 @@ export function App() {
         sources: initialSources,
       };
       setChannels([...channels, newCh]);
+
+      // Sincronizar en vivo con la base de datos NestJS / PostgreSQL en Render
+      fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/channels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: chName,
+          category_id: chCategoryId,
+          stream_url: cleanInitialUrl || undefined,
+          logo_emoji: '📺',
+        }),
+      })
+        .then((res) => res.json())
+        .then((savedCh) => {
+          if (savedCh && savedCh.id && cleanInitialUrl) {
+            fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/sources', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channel_id: savedCh.id,
+                url: cleanInitialUrl,
+                format: chInitialFormat,
+                priority: 1,
+              }),
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
     setShowChannelModal(false);
   };
@@ -2224,12 +2253,13 @@ export function App() {
             <form onSubmit={(e) => {
               e.preventDefault();
               if (!srcUrl.trim()) return;
+              const cleanUrl = extractCleanUrl(srcUrl);
               let updatedSources = [...selectedChannelForSources.sources];
               if (srcPriority === 1) updatedSources = updatedSources.map((s) => ({ ...s, priority: s.priority + 1 }));
               const newSrc: ChannelSourceRecord = {
                 id: `src-${Date.now()}`,
                 channel_id: selectedChannelForSources.id,
-                url: extractCleanUrl(srcUrl),
+                url: cleanUrl,
                 format: srcFormat,
                 is_active: true,
                 priority: srcPriority,
@@ -2239,6 +2269,19 @@ export function App() {
               const finalSources = [newSrc, ...updatedSources];
               setSelectedChannelForSources({ ...selectedChannelForSources, sources: finalSources });
               setChannels(channels.map((c) => c.id === selectedChannelForSources.id ? { ...c, sources: finalSources } : c));
+              
+              // Sincronizar en vivo la fuente con la base de datos NestJS en Render
+              fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/sources', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  channel_id: selectedChannelForSources.id,
+                  url: cleanUrl,
+                  format: srcFormat,
+                  priority: srcPriority,
+                }),
+              }).catch(() => {});
+
               setShowAddTvSourceModal(false);
               setSrcUrl('');
             }}>

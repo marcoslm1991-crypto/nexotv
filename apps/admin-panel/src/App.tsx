@@ -523,13 +523,21 @@ export function App() {
             if (savedLocalStr) {
               try {
                 const localChs: ChannelRecord[] = JSON.parse(savedLocalStr);
-                const merged = [...localChs];
-                fetchedChannels.forEach((fc) => {
-                  if (!merged.some((lc) => lc.id === fc.id || lc.name.trim().toLowerCase() === fc.name.trim().toLowerCase())) {
-                    merged.push(fc);
-                  }
-                });
-                setChannels(merged);
+                if (Array.isArray(localChs)) {
+                  const merged = localChs.filter((lc) => lc && typeof lc === 'object' && lc.id && lc.name);
+                  fetchedChannels.forEach((fc) => {
+                    if (fc && fc.name) {
+                      const fcName = String(fc.name).trim().toLowerCase();
+                      const exists = merged.some((lc) => lc.id === fc.id || (lc.name && String(lc.name).trim().toLowerCase() === fcName));
+                      if (!exists) {
+                        merged.push(fc);
+                      }
+                    }
+                  });
+                  setChannels(merged.length > 0 ? merged : fetchedChannels);
+                } else {
+                  setChannels(fetchedChannels);
+                }
               } catch (e) {
                 setChannels(fetchedChannels);
               }

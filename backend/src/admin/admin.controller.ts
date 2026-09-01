@@ -4,16 +4,19 @@ import { Response, Request } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
 
-@Controller('admin')
+@Controller()
 export class AdminController {
   @Public()
-  @Get()
-  getAdminRoot(@Res() res: Response) {
+  @Get('admin')
+  getAdminRootNoSlash(@Req() req: Request, @Res() res: Response) {
+    if (!req.originalUrl.endsWith('/')) {
+      return res.redirect('/admin/');
+    }
     return this.serveFile('index.html', res);
   }
 
   @Public()
-  @Get('*')
+  @Get('admin/*')
   getAdminAsset(@Req() req: Request, @Res() res: Response) {
     let relPath = req.params[0] || '';
     if (!relPath || relPath === '') {
@@ -47,7 +50,6 @@ export class AdminController {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       return res.sendFile(filePath);
     } else {
-      // SPA Fallback for client-side routing
       return res.sendFile(join(adminDistPath, 'index.html'));
     }
   }

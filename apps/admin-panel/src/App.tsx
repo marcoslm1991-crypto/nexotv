@@ -195,71 +195,83 @@ export function App() {
 
   // 3. TV CHANNELS DATA & SUB-TABS
   const [tvSubTab, setTvSubTab] = useState<'CHANNELS' | 'SOURCES' | 'FILTERS'>('CHANNELS');
-  const [channels, setChannels] = useState<ChannelRecord[]>([
-    {
-      id: 'ch-telefe',
-      name: 'Telefe HD',
-      category_id: 'cat-1',
-      category_name: 'Argentina',
-      logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Telefe_logo_2018.svg/320px-Telefe_logo_2018.svg.png',
-      logo_emoji: '📺',
-      description: 'Televisión abierta de Argentina en vivo 24/7.',
-      is_active: true,
-      sort_order: 1,
-      created_at: '2026-08-15',
-      updated_at: '2026-08-28',
-      sources: [
-        { id: 'src-telefe-1', channel_id: 'ch-telefe', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'WORKING', last_http_code: 200, last_response_time: 145, last_checked_at: '2026-08-28 14:00', created_at: '2026-08-15' },
-        { id: 'src-telefe-2', channel_id: 'ch-telefe', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', format: 'MP4', is_active: false, priority: 2, last_status: 'WORKING', last_http_code: 200, last_response_time: 210, last_checked_at: '2026-08-27 10:30', created_at: '2026-08-16' },
-      ],
-    },
-    {
-      id: 'ch-tyc',
-      name: 'TyC Sports HD',
-      category_id: 'cat-2',
-      category_name: 'Deportes',
-      logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/TyC_Sports_Logo.svg/320px-TyC_Sports_Logo.svg.png',
-      logo_emoji: '⚽',
-      description: 'El canal de deportes N°1 de la Argentina.',
-      is_active: true,
-      sort_order: 2,
-      created_at: '2026-08-15',
-      updated_at: '2026-08-28',
-      sources: [
-        { id: 'src-tyc-1', channel_id: 'ch-tyc', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'WORKING', last_http_code: 200, last_response_time: 98, last_checked_at: '2026-08-28 13:45', created_at: '2026-08-15' },
-      ],
-    },
-    {
-      id: 'ch-tn',
-      name: 'TN Todo Noticias',
-      category_id: 'cat-3',
-      category_name: 'Noticias',
-      logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Todo_Noticias_2016.svg/320px-Todo_Noticias_2016.svg.png',
-      logo_emoji: '📰',
-      description: 'Noticias e información en vivo las 24 horas.',
-      is_active: true,
-      sort_order: 3,
-      created_at: '2026-08-15',
-      updated_at: '2026-08-28',
-      sources: [
-        { id: 'src-tn-1', channel_id: 'ch-tn', url: 'https://stream-invalid-sample.com/live.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'ERROR', last_http_code: 503, last_response_time: 5000, last_error_message: 'Servidor no responde (503 Service Unavailable)', last_checked_at: '2026-08-28 12:15', created_at: '2026-08-18' },
-      ],
-    },
-    {
-      id: 'ch-cine',
-      name: 'Cine Premium 4K',
-      category_id: 'cat-4',
-      category_name: 'Cine',
-      logo_url: null,
-      logo_emoji: '🍿',
-      description: 'Películas taquilleras sin cortes comerciales.',
-      is_active: false,
-      sort_order: 4,
-      created_at: '2026-08-20',
-      updated_at: '2026-08-28',
-      sources: [],
-    },
-  ]);
+  const [channels, setChannels] = useState<ChannelRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('nexotv_admin_channels');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const valid = parsed.filter((c) => c && typeof c === 'object' && c.id && c.name);
+          if (valid.length > 0) return valid;
+        }
+      }
+    } catch (e) {}
+    return [
+      {
+        id: 'ch-telefe',
+        name: 'Telefe HD',
+        category_id: 'cat-1',
+        category_name: 'Argentina',
+        logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Telefe_logo_2018.svg/320px-Telefe_logo_2018.svg.png',
+        logo_emoji: '📺',
+        description: 'Televisión abierta de Argentina en vivo 24/7.',
+        is_active: true,
+        sort_order: 1,
+        created_at: '2026-08-15',
+        updated_at: '2026-08-28',
+        sources: [
+          { id: 'src-telefe-1', channel_id: 'ch-telefe', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'WORKING', last_http_code: 200, last_response_time: 145, last_checked_at: '2026-08-28 14:00', created_at: '2026-08-15' },
+          { id: 'src-telefe-2', channel_id: 'ch-telefe', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', format: 'MP4', is_active: false, priority: 2, last_status: 'WORKING', last_http_code: 200, last_response_time: 210, last_checked_at: '2026-08-27 10:30', created_at: '2026-08-16' },
+        ],
+      },
+      {
+        id: 'ch-tyc',
+        name: 'TyC Sports HD',
+        category_id: 'cat-2',
+        category_name: 'Deportes',
+        logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/TyC_Sports_Logo.svg/320px-TyC_Sports_Logo.svg.png',
+        logo_emoji: '⚽',
+        description: 'El canal de deportes N°1 de la Argentina.',
+        is_active: true,
+        sort_order: 2,
+        created_at: '2026-08-15',
+        updated_at: '2026-08-28',
+        sources: [
+          { id: 'src-tyc-1', channel_id: 'ch-tyc', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'WORKING', last_http_code: 200, last_response_time: 98, last_checked_at: '2026-08-28 13:45', created_at: '2026-08-15' },
+        ],
+      },
+      {
+        id: 'ch-tn',
+        name: 'TN Todo Noticias',
+        category_id: 'cat-3',
+        category_name: 'Noticias',
+        logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Todo_Noticias_2016.svg/320px-Todo_Noticias_2016.svg.png',
+        logo_emoji: '📰',
+        description: 'Noticias e información en vivo las 24 horas.',
+        is_active: true,
+        sort_order: 3,
+        created_at: '2026-08-15',
+        updated_at: '2026-08-28',
+        sources: [
+          { id: 'src-tn-1', channel_id: 'ch-tn', url: 'https://stream-invalid-sample.com/live.m3u8', format: 'HLS', is_active: true, priority: 1, last_status: 'ERROR', last_http_code: 503, last_response_time: 5000, last_error_message: 'Servidor no responde (503 Service Unavailable)', last_checked_at: '2026-08-28 12:15', created_at: '2026-08-18' },
+        ],
+      },
+      {
+        id: 'ch-cine',
+        name: 'Cine Premium 4K',
+        category_id: 'cat-4',
+        category_name: 'Cine',
+        logo_url: null,
+        logo_emoji: '🍿',
+        description: 'Películas taquilleras sin cortes comerciales.',
+        is_active: false,
+        sort_order: 4,
+        created_at: '2026-08-20',
+        updated_at: '2026-08-28',
+        sources: [],
+      },
+    ];
+  });
   const [selectedChannelForSources, setSelectedChannelForSources] = useState<ChannelRecord | null>(null);
 
   // 4. MOVIES DATA & SUB-TABS
@@ -750,7 +762,13 @@ export function App() {
         updated_at: new Date().toISOString().split('T')[0],
         sources: initialSources,
       };
-      setChannels([...channels, newCh]);
+      setChannels((prev) => {
+        const updated = [...prev, newCh];
+        try {
+          localStorage.setItem('nexotv_admin_channels', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
 
       // Sincronizar en vivo con la base de datos NestJS / PostgreSQL en Render
       fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/channels', {
@@ -759,26 +777,49 @@ export function App() {
         body: JSON.stringify({
           name: chName,
           category_id: chCategoryId,
+          initial_source_url: cleanInitialUrl || undefined,
+          initial_source_format: chInitialFormat,
           stream_url: cleanInitialUrl || undefined,
           logo_emoji: '📺',
         }),
       })
         .then((res) => res.json())
         .then((savedCh) => {
-          if (savedCh && savedCh.id && cleanInitialUrl) {
-            fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/sources', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                channel_id: savedCh.id,
-                url: cleanInitialUrl,
-                format: chInitialFormat,
-                priority: 1,
-              }),
-            }).catch(() => {});
+          if (savedCh && savedCh.id) {
+            setChannels((prev) => {
+              const updated = prev.map((c) =>
+                c.id === newChId
+                  ? {
+                      ...c,
+                      id: savedCh.id,
+                      category_id: savedCh.category_id || c.category_id,
+                      category_name: savedCh.category_name || c.category_name,
+                      sources:
+                        savedCh.sources && savedCh.sources.length > 0
+                          ? savedCh.sources.map((s: any) => ({
+                              id: s.id,
+                              channel_id: savedCh.id,
+                              url: s.url,
+                              format: s.format || 'HLS',
+                              is_active: true,
+                              priority: 1,
+                              last_status: 'WORKING',
+                              last_http_code: 200,
+                              last_response_time: 120,
+                              created_at: new Date().toISOString().split('T')[0],
+                            }))
+                          : c.sources,
+                    }
+                  : c
+              );
+              try {
+                localStorage.setItem('nexotv_admin_channels', JSON.stringify(updated));
+              } catch (e) {}
+              return updated;
+            });
           }
         })
-        .catch(() => {});
+        .catch((err) => console.log('Error sincronizando canal:', err));
     }
     setShowChannelModal(false);
   };
@@ -1386,11 +1427,37 @@ export function App() {
                               <button style={styles.btnAction} onClick={() => { setSelectedChannelForSources(ch); setTvSubTab('SOURCES'); }}>🔗 Fuentes ({ch.sources.length})</button>
                               <button
                                 style={ch.is_active ? styles.btnToggleInactive : styles.btnToggleActive}
-                                onClick={() => setChannels(channels.map((c) => c.id === ch.id ? { ...c, is_active: !c.is_active } : c))}
+                                onClick={() => {
+                                  const nextState = !ch.is_active;
+                                  setChannels((prev) => {
+                                    const updated = prev.map((c) => (c.id === ch.id ? { ...c, is_active: nextState } : c));
+                                    try { localStorage.setItem('nexotv_admin_channels', JSON.stringify(updated)); } catch (e) {}
+                                    return updated;
+                                  });
+                                  fetch(`https://nexotv-necn.onrender.com/api/v1/tv/admin/channels/${ch.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ is_active: nextState }),
+                                  }).catch(() => {});
+                                }}
                               >
                                 {ch.is_active ? '🚫 Desactivar' : '✓ Activar'}
                               </button>
-                              <button style={styles.btnDanger} onClick={() => setChannels(channels.filter((c) => c.id !== ch.id))}>🗑️</button>
+                              <button
+                                style={styles.btnDanger}
+                                onClick={() => {
+                                  setChannels((prev) => {
+                                    const updated = prev.filter((c) => c.id !== ch.id);
+                                    try { localStorage.setItem('nexotv_admin_channels', JSON.stringify(updated)); } catch (e) {}
+                                    return updated;
+                                  });
+                                  fetch(`https://nexotv-necn.onrender.com/api/v1/tv/admin/channels/${ch.id}`, {
+                                    method: 'DELETE',
+                                  }).catch(() => {});
+                                }}
+                              >
+                                🗑️
+                              </button>
                             </td>
                           </tr>
                         );

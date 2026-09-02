@@ -59,6 +59,10 @@ export class CreateChannelDto {
 
   @IsString()
   @IsOptional()
+  logo_emoji?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @IsBoolean()
@@ -76,6 +80,10 @@ export class CreateChannelDto {
   @IsString()
   @IsOptional()
   initial_source_format?: string;
+
+  @IsString()
+  @IsOptional()
+  stream_url?: string;
 }
 
 export class UpdateChannelDto {
@@ -93,6 +101,10 @@ export class UpdateChannelDto {
 
   @IsString()
   @IsOptional()
+  logo_emoji?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @IsBoolean()
@@ -102,6 +114,10 @@ export class UpdateChannelDto {
   @IsInt()
   @IsOptional()
   sort_order?: number;
+
+  @IsString()
+  @IsOptional()
+  stream_url?: string;
 }
 
 export class CreateChannelSourceDto {

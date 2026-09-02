@@ -16,19 +16,23 @@ export declare class CreateChannelDto {
     name: string;
     category_id: string;
     logo_url?: string;
+    logo_emoji?: string;
     description?: string;
     is_active?: boolean;
     sort_order?: number;
     initial_source_url?: string;
     initial_source_format?: string;
+    stream_url?: string;
 }
 export declare class UpdateChannelDto {
     name?: string;
     category_id?: string;
     logo_url?: string;
+    logo_emoji?: string;
     description?: string;
     is_active?: boolean;
     sort_order?: number;
+    stream_url?: string;
 }
 export declare class CreateChannelSourceDto {
     channel_id: string;

@@ -463,104 +463,44 @@ export function App() {
 
   // Cargar canales en vivo y categorías dinámicamente desde el backend NestJS en Render
   useEffect(() => {
-    fetch('https://nexotv-necn.onrender.com/api/v1/tv/live')
+    fetch('https://nexotv-necn.onrender.com/api/v1/tv/admin/channels')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          const fetchedCategories: CategoryRecord[] = [];
-          const fetchedChannels: ChannelRecord[] = [];
-
-          data.forEach((cat: any, catIdx: number) => {
-            fetchedCategories.push({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-'),
-              type: 'TV',
-              image_url: cat.image_url || cat.logo_emoji || '📺',
-              is_active: true,
-              sort_order: cat.sort_order || catIdx + 1,
-              created_at: new Date().toISOString().split('T')[0],
-            });
-
-            if (Array.isArray(cat.channels)) {
-              cat.channels.forEach((ch: any, chIdx: number) => {
-                const srcList: ChannelSourceRecord[] = [];
-                if (ch.active_source) {
-                  srcList.push({
-                    id: ch.active_source.id || `src-${ch.id}`,
-                    channel_id: ch.id,
-                    url: ch.active_source.url,
-                    format: ch.active_source.format || 'HLS',
-                    is_active: true,
-                    priority: 1,
-                    last_status: 'WORKING',
-                    last_http_code: 200,
-                    last_response_time: 120,
-                    created_at: new Date().toISOString().split('T')[0],
-                  });
-                } else if (ch.stream_url) {
-                  srcList.push({
-                    id: `src-${ch.id}`,
-                    channel_id: ch.id,
-                    url: ch.stream_url,
-                    format: ch.stream_url.endsWith('.mp4') ? 'MP4' : 'HLS',
-                    is_active: true,
-                    priority: 1,
-                    last_status: 'WORKING',
-                    last_http_code: 200,
-                    last_response_time: 120,
-                    created_at: new Date().toISOString().split('T')[0],
-                  });
-                }
-                fetchedChannels.push({
-                  id: ch.id,
-                  name: ch.name,
-                  category_id: cat.id,
-                  category_name: cat.name,
-                  logo_url: ch.logo_url,
-                  logo_emoji: ch.logo_emoji || '📺',
-                  description: ch.description || `Canal ${ch.name}`,
-                  is_active: true,
-                  sort_order: ch.sort_order || chIdx + 1,
-                  created_at: new Date().toISOString().split('T')[0],
-                  updated_at: new Date().toISOString().split('T')[0],
-                  sources: srcList,
-                });
-              });
-            }
-          });
-
-          if (fetchedChannels.length > 0) {
-            const savedLocalStr = localStorage.getItem('nexotv_admin_channels');
-            if (savedLocalStr) {
-              try {
-                const localChs: ChannelRecord[] = JSON.parse(savedLocalStr);
-                if (Array.isArray(localChs)) {
-                  const merged = localChs.filter((lc) => lc && typeof lc === 'object' && lc.id && lc.name);
-                  fetchedChannels.forEach((fc) => {
-                    if (fc && fc.name) {
-                      const fcName = String(fc.name).trim().toLowerCase();
-                      const exists = merged.some((lc) => lc.id === fc.id || (lc.name && String(lc.name).trim().toLowerCase() === fcName));
-                      if (!exists) {
-                        merged.push(fc);
-                      }
-                    }
-                  });
-                  setChannels(merged.length > 0 ? merged : fetchedChannels);
-                } else {
-                  setChannels(fetchedChannels);
-                }
-              } catch (e) {
-                setChannels(fetchedChannels);
-              }
-            } else {
-              setChannels(fetchedChannels);
-            }
-            if (fetchedCategories.length > 0) setCategories(fetchedCategories);
-          }
+          const loadedChannels: ChannelRecord[] = data.map((ch: any) => ({
+            id: ch.id,
+            name: ch.name,
+            category_id: ch.category_id,
+            category_name: ch.category_name || 'General',
+            logo_url: ch.logo_url,
+            logo_emoji: ch.logo_emoji || '📺',
+            description: ch.description || `Canal ${ch.name}`,
+            is_active: ch.is_active ?? true,
+            sort_order: ch.sort_order || 1,
+            created_at: ch.created_at ? String(ch.created_at).split('T')[0] : new Date().toISOString().split('T')[0],
+            updated_at: ch.updated_at ? String(ch.updated_at).split('T')[0] : new Date().toISOString().split('T')[0],
+            sources: Array.isArray(ch.sources)
+              ? ch.sources.map((s: any) => ({
+                  id: s.id,
+                  channel_id: s.channel_id,
+                  url: s.url,
+                  format: s.format || 'HLS',
+                  is_active: s.is_active ?? true,
+                  priority: s.priority || 1,
+                  last_status: s.last_status || 'WORKING',
+                  last_http_code: s.last_http_code || 200,
+                  last_response_time: s.last_response_time || 120,
+                  created_at: s.created_at ? String(s.created_at).split('T')[0] : new Date().toISOString().split('T')[0],
+                }))
+              : [],
+          }));
+          setChannels(loadedChannels);
+          try {
+            localStorage.setItem('nexotv_admin_channels', JSON.stringify(loadedChannels));
+          } catch (e) {}
         }
       })
-      .catch((err) => console.log('Usando catálogo inicial local:', err));
+      .catch((err) => console.log('Error cargando canales desde API:', err));
 
     fetch('https://nexotv-necn.onrender.com/api/v1/users')
       .then((res) => res.json())

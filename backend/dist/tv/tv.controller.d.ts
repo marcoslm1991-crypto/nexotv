@@ -33,35 +33,35 @@ export declare class TvController {
             channels: number;
         };
         id: string;
+        is_active: boolean;
+        sort_order: number;
         name: string;
         slug: string;
         type: string;
         image_url: string | null;
-        is_active: boolean;
-        sort_order: number;
     }[]>;
     createCategory(dto: CreateCategoryDto): Promise<{
         created_at: string;
         updated_at: string;
         channel_count: number;
         id: string;
+        is_active: boolean;
+        sort_order: number;
         name: string;
         slug: string;
         type: string;
         image_url: string | null;
-        is_active: boolean;
-        sort_order: number;
     }>;
     updateCategory(id: string, dto: UpdateCategoryDto): Promise<{
         created_at: string;
         updated_at: string;
         id: string;
+        is_active: boolean;
+        sort_order: number;
         name: string;
         slug: string;
         type: string;
         image_url: string | null;
-        is_active: boolean;
-        sort_order: number;
     }>;
     deleteCategory(id: string): Promise<{
         success: boolean;
@@ -92,12 +92,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -108,12 +108,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }[]>;
     createChannel(dto: CreateChannelDto): Promise<{
@@ -141,12 +141,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -157,12 +157,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     updateChannel(id: string, dto: UpdateChannelDto): Promise<{
@@ -190,12 +190,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -206,12 +206,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     deleteChannel(id: string): Promise<{
@@ -243,12 +243,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -259,12 +259,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     updateSource(dto: UpdateChannelSourceDto, id: string): Promise<{
@@ -292,12 +292,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -308,12 +308,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     deleteSource(id: string): Promise<{
@@ -341,12 +341,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -357,12 +357,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     quickSwitchSource(req: any, dto: QuickSwitchSourceDto): Promise<{
@@ -390,12 +390,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         }[];
         active_source: {
             format: import("../common/types").StreamFormat;
@@ -406,12 +406,12 @@ export declare class TvController {
             id: string;
             is_active: boolean;
             priority: number;
-            channel_id: string;
             url: string;
             last_http_code: number | null;
             last_response_time: number | null;
             last_error_message: string | null;
             created_by_user_id: string | null;
+            channel_id: string;
         } | null;
     }>;
     testLink(dto: TestLinkDto): Promise<import("../common/types").StreamTestResultDto>;

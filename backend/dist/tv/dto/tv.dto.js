@@ -89,6 +89,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
+], CreateChannelDto.prototype, "logo_emoji", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
 ], CreateChannelDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
@@ -110,6 +115,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateChannelDto.prototype, "initial_source_format", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateChannelDto.prototype, "stream_url", void 0);
 class UpdateChannelDto {
 }
 exports.UpdateChannelDto = UpdateChannelDto;
@@ -132,6 +142,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
+], UpdateChannelDto.prototype, "logo_emoji", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
 ], UpdateChannelDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
@@ -143,6 +158,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateChannelDto.prototype, "sort_order", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateChannelDto.prototype, "stream_url", void 0);
 class CreateChannelSourceDto {
 }
 exports.CreateChannelSourceDto = CreateChannelSourceDto;

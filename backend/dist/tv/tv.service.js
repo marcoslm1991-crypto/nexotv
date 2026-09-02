@@ -289,14 +289,35 @@ let TvService = TvService_1 = class TvService {
         return result;
     }
     async createChannel(dto) {
-        const category = await this.prisma.category.findUnique({ where: { id: dto.category_id } });
+        let category = await this.prisma.category.findUnique({ where: { id: dto.category_id } });
         if (!category) {
-            throw new common_1.BadRequestException('La categoría especificada no existe.');
+            category = await this.prisma.category.findFirst({
+                where: {
+                    OR: [
+                        { name: { equals: dto.category_id, mode: 'insensitive' } },
+                        { slug: { equals: dto.category_id.toLowerCase(), mode: 'insensitive' } },
+                    ],
+                },
+            });
         }
+        if (!category) {
+            category = await this.prisma.category.findFirst();
+        }
+        if (!category) {
+            category = await this.prisma.category.create({
+                data: {
+                    name: 'General',
+                    slug: 'general',
+                    sort_order: 1,
+                    is_active: true,
+                },
+            });
+        }
+        const initialUrl = dto.initial_source_url || dto.stream_url;
         const channel = await this.prisma.channel.create({
             data: {
                 name: dto.name,
-                category_id: dto.category_id,
+                category_id: category.id,
                 category_name: category.name,
                 logo_url: dto.logo_url || null,
                 description: dto.description || null,
@@ -304,12 +325,12 @@ let TvService = TvService_1 = class TvService {
                 sort_order: dto.sort_order ?? 0,
             },
         });
-        if (dto.initial_source_url) {
+        if (initialUrl) {
             await this.prisma.channelSource.create({
                 data: {
                     channel_id: channel.id,
-                    url: dto.initial_source_url,
-                    format: dto.initial_source_format || this.linkTesterService.detectFormat(dto.initial_source_url),
+                    url: initialUrl,
+                    format: dto.initial_source_format || this.linkTesterService.detectFormat(initialUrl),
                     is_active: true,
                     priority: 1,
                 },

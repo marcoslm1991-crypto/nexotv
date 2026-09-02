@@ -387,6 +387,7 @@ export class TvService {
         category_id: category.id,
         category_name: category.name,
         logo_url: dto.logo_url || null,
+        logo_emoji: dto.logo_emoji || '📺',
         description: dto.description || null,
         is_active: dto.is_active ?? true,
         sort_order: dto.sort_order ?? 0,
